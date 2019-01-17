@@ -3,17 +3,31 @@ package main
 import (
 	"fmt"
 	ovirtsdk4 "gopkg.in/imjoey/go-ovirt.v4"
+	"gopkg.in/ini.v1"
 	"log"
 	"time"
 )
 
+const (
+	ConfigFilePath = "ovirt.ini"
+)
+
 func main() {
+
+	config, err := ini.Load(ConfigFilePath)
+	if err != nil {
+		log.Fatalf("Fail to read file: %v", err.Error())
+	}
+
+	url := config.Section("ovirt").Key("ovirt_url").String()
+	user := config.Section("ovirt").Key("ovirt_username").String()
+	pass := config.Section("ovirt").Key("ovirt_password").String()
+
 	// Create the connection to the api server
-	inputRawURL := "https://ovirthost/ovirt-engine/api"
 	conn, err := ovirtsdk4.NewConnectionBuilder().
-		URL(inputRawURL).
-		Username("user").
-		Password("pass").
+		URL(url).
+		Username(user).
+		Password(pass).
 		Insecure(true).
 		Compress(true).
 		Timeout(time.Second * 20).
@@ -57,11 +71,6 @@ func main() {
 			if vmOS, ok := vm.Os(); ok {
 				t, _ := vmOS.Type()
 				fmt.Printf("OS: %v\n", t)
-			}
-
-			if vmTemplate, ok := vm.Template(); ok {
-				//t, _ := vmTemplate.Id()
-				fmt.Printf("Template name: %v\n", vmTemplate.MustName())
 			}
 
 			if vmHost, ok := vm.Host(); ok {
