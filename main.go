@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	ovirtsdk4 "gopkg.in/imjoey/go-ovirt.v4"
 	"gopkg.in/ini.v1"
@@ -11,6 +12,12 @@ import (
 const (
 	ConfigFilePath = "ovirt.ini"
 )
+
+type OvirtVM struct {
+	Name   string `json:"name"`
+	FQDN   string `json:"fqdn"`
+	Status string `json:"status"`
+}
 
 func main() {
 
@@ -52,32 +59,27 @@ func main() {
 		// Print the virtual machine names and identifiers:
 		for _, vm := range vms.Slice() {
 
+			var parsedVM OvirtVM
+			var jsonData []byte
+
 			if vmName, ok := vm.Name(); ok {
-				fmt.Printf("VM name: %v\n", vmName)
+				parsedVM.Name = vmName
 			}
 
 			if vmFQDN, ok := vm.Fqdn(); ok {
-				fmt.Printf("FQDN: %v\n", vmFQDN)
-			}
-
-			if vmType, ok := vm.Type(); ok {
-				fmt.Printf("type: %v\n", vmType)
+				parsedVM.FQDN = vmFQDN
 			}
 
 			if vmStatus, ok := vm.Status(); ok {
-				fmt.Printf("status: %v\n", vmStatus)
+				parsedVM.Status = string(vmStatus)
 			}
 
-			if vmOS, ok := vm.Os(); ok {
-				t, _ := vmOS.Type()
-				fmt.Printf("OS: %v\n", t)
+			//marshaling recieved responce
+			jsonData, err := json.Marshal(parsedVM)
+			if err != nil {
+				log.Fatal("JSON marshaling failed: %s", err)
 			}
-
-			if vmHost, ok := vm.Host(); ok {
-				fmt.Printf("Host: %v\n", vmHost.Name)
-			}
-
-			fmt.Println("")
+			fmt.Println(string(jsonData))
 		}
 	}
 }
